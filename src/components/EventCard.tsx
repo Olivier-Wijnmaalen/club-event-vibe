@@ -6,9 +6,13 @@ interface Props {
 
 function formatTime(iso: string | null): string | null {
   if (!iso) return null;
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return null;
-  return d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
+  // Extract HH:MM directly from the stored timestamp so we show the
+  // event's local time (as stored), not the viewer's browser time.
+  const match = iso.match(/T(\d{2}):(\d{2})/);
+  if (match) return `${match[1]}:${match[2]}`;
+  const spaceMatch = iso.match(/\s(\d{2}):(\d{2})/);
+  if (spaceMatch) return `${spaceMatch[1]}:${spaceMatch[2]}`;
+  return null;
 }
 
 export function EventCard({ event }: Props) {
