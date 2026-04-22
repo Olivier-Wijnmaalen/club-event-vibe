@@ -7,7 +7,7 @@ export function DateHeader({ date }: Props) {
   const day = date.toLocaleDateString(undefined, { day: "numeric", month: "long" });
 
   return (
-    <div className="sticky top-0 z-10 -mx-4 border-b border-border bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+    <div className="sticky top-[60px] z-10 -mx-4 border-b border-border bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:top-[68px]">
       <div className="flex items-baseline gap-3">
         <span className="text-sm font-bold uppercase tracking-[0.2em] text-primary">
           {weekday}
