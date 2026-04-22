@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase, type EventRow } from "@/lib/supabase";
 import { EventCard } from "@/components/EventCard";
 import { DateHeader } from "@/components/DateHeader";
+import { AppLayout } from "@/components/AppLayout";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -79,34 +80,20 @@ function Index() {
   }, [events]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border bg-background">
-        <div className="mx-auto max-w-2xl px-4 py-5 sm:py-6">
-          <h1 className="text-2xl font-black uppercase tracking-[0.18em] text-primary sm:text-3xl">
-            Club Carousel
-          </h1>
-          <p className="mt-1 text-xs uppercase tracking-[0.25em] text-muted-foreground">
-            Tonight & beyond
-          </p>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-2xl px-4 pb-24 pt-2">
-        {events === null && <LoadingState />}
-        {events !== null && groups.length === 0 && <EmptyState error={error} />}
-
-        {groups.map((g) => (
-          <section key={g.key} className="mb-6">
-            <DateHeader date={g.date} />
-            <div className="space-y-3 pt-3">
-              {g.items.map((e) => (
-                <EventCard key={String(e.id)} event={e} />
-              ))}
-            </div>
-          </section>
-        ))}
-      </main>
-    </div>
+    <AppLayout>
+      {events === null && <LoadingState />}
+      {events !== null && groups.length === 0 && <EmptyState error={error} />}
+      {groups.map((g) => (
+        <section key={g.key} className="mb-6">
+          <DateHeader date={g.date} />
+          <div className="space-y-3 pt-3">
+            {g.items.map((e) => (
+              <EventCard key={String(e.id)} event={e} />
+            ))}
+          </div>
+        </section>
+      ))}
+    </AppLayout>
   );
 }
 
