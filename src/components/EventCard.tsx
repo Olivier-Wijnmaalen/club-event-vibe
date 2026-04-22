@@ -5,10 +5,11 @@ interface Props {
 }
 
 export function EventCard({ event }: Props) {
-  const hasTicket = Boolean(event.ticket_url);
-  const Wrapper: React.ElementType = hasTicket ? "a" : "div";
-  const wrapperProps = hasTicket
-    ? { href: event.ticket_url!, target: "_blank", rel: "noopener noreferrer" }
+  const href = event.source_url ?? event.ticket_url;
+  const hasLink = Boolean(href);
+  const Wrapper: React.ElementType = hasLink ? "a" : "div";
+  const wrapperProps = hasLink
+    ? { href: href!, target: "_blank", rel: "noopener noreferrer" }
     : {};
 
   return (
