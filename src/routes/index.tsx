@@ -1,26 +1,137 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import { supabase, type EventRow } from "@/lib/supabase";
+import { EventCard } from "@/components/EventCard";
+import { DateHeader } from "@/components/DateHeader";
 
 export const Route = createFileRoute("/")({
   component: Index,
+  head: () => ({
+    meta: [
+      { title: "Club Carousel — Club agenda" },
+      {
+        name: "description",
+        content: "The agenda of upcoming club nights, parties and artists.",
+      },
+    ],
+  }),
 });
 
-// IMPORTANT: Replace this placeholder. For sites with multiple pages (About, Services, Contact, etc.),
-// create separate route files (about.tsx, services.tsx, contact.tsx) — don't put all pages in this file.
-function PlaceholderIndex() {
+function getGroupingDate(e: EventRow): Date | null {
+  const raw = e.start_datetime ?? e.event_date;
+  if (!raw) return null;
+  const d = new Date(raw);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function dateKey(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function Index() {
+  const [events, setEvents] = useState<EventRow[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const nowIso = new Date().toISOString();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayDate = today.toISOString().slice(0, 10);
+
+      const { data, error } = await supabase
+        .from("events")
+        .select(
+          "id, club_name, party_name, artist_text, event_date, ticket_url, source_url, start_datetime, end_datetime",
+        )
+        .or(`start_datetime.gte.${nowIso},event_date.gte.${todayDate}`)
+        .order("start_datetime", { ascending: true, nullsFirst: false })
+        .order("event_date", { ascending: true, nullsFirst: false });
+
+      if (cancelled) return;
+      if (error) {
+        setError(error.message);
+        setEvents([]);
+        return;
+      }
+      setEvents(data ?? []);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const groups = useMemo(() => {
+    if (!events) return [];
+    const map = new Map<string, { date: Date; items: EventRow[] }>();
+    for (const e of events) {
+      const d = getGroupingDate(e);
+      if (!d) continue;
+      const key = dateKey(d);
+      const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      if (!map.has(key)) map.set(key, { date: dayStart, items: [] });
+      map.get(key)!.items.push(e);
+    }
+    return Array.from(map.entries())
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+      .map(([key, value]) => ({ key, ...value }));
+  }, [events]);
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="border-b border-border bg-background">
+        <div className="mx-auto max-w-2xl px-4 py-5 sm:py-6">
+          <h1 className="text-2xl font-black uppercase tracking-[0.18em] text-primary sm:text-3xl">
+            Club Carousel
+          </h1>
+          <p className="mt-1 text-xs uppercase tracking-[0.25em] text-muted-foreground">
+            Tonight & beyond
+          </p>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-2xl px-4 pb-24 pt-2">
+        {events === null && <LoadingState />}
+        {events !== null && groups.length === 0 && <EmptyState error={error} />}
+
+        {groups.map((g) => (
+          <section key={g.key} className="mb-6">
+            <DateHeader date={g.date} />
+            <div className="space-y-3 pt-3">
+              {g.items.map((e) => (
+                <EventCard key={String(e.id)} event={e} />
+              ))}
+            </div>
+          </section>
+        ))}
+      </main>
     </div>
   );
 }
 
-function Index() {
-  return <PlaceholderIndex />;
+function LoadingState() {
+  return (
+    <div className="space-y-3 pt-6">
+      {[0, 1, 2, 3].map((i) => (
+        <div
+          key={i}
+          className="h-28 animate-pulse rounded-lg border border-border bg-card/60"
+        />
+      ))}
+    </div>
+  );
+}
+
+function EmptyState({ error }: { error: string | null }) {
+  return (
+    <div className="mt-20 text-center">
+      <div className="text-sm font-bold uppercase tracking-[0.25em] text-primary">
+        {error ? "Couldn't load events" : "No upcoming events"}
+      </div>
+      <p className="mt-2 text-sm text-muted-foreground">
+        {error ?? "Check back soon — the dancefloor never sleeps for long."}
+      </p>
+    </div>
+  );
 }
