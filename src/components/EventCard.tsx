@@ -1,4 +1,6 @@
 import type { EventRow } from "@/lib/supabase";
+import { Bookmark } from "lucide-react";
+import { useSavedEvents } from "@/lib/savedEvents";
 
 interface Props {
   event: EventRow;
@@ -16,6 +18,8 @@ function formatTime(iso: string | null): string | null {
 }
 
 export function EventCard({ event }: Props) {
+  const { isSaved, toggleSaved } = useSavedEvents();
+  const saved = isSaved(event.id);
   const href = event.source_url ?? event.ticket_url;
   const hasLink = Boolean(href);
   const Wrapper: React.ElementType = hasLink ? "a" : "div";
@@ -30,7 +34,7 @@ export function EventCard({ event }: Props) {
   return (
     <Wrapper
       {...wrapperProps}
-      className="group block rounded-lg border border-border bg-card p-5 transition-all duration-200 hover:border-primary/60 hover:bg-card/80 active:scale-[0.99]"
+      className="group relative block rounded-lg border border-border bg-card p-5 pb-12 transition-all duration-200 hover:border-primary/60 hover:bg-card/80 active:scale-[0.99]"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
@@ -52,6 +56,23 @@ export function EventCard({ event }: Props) {
           {event.artist_text}
         </p>
       )}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          void toggleSaved(event.id);
+        }}
+        aria-label={saved ? "Unsave event" : "Save event"}
+        aria-pressed={saved}
+        className={`absolute bottom-3 right-3 inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors ${
+          saved
+            ? "text-primary hover:bg-primary/10"
+            : "text-muted-foreground hover:bg-card hover:text-primary"
+        }`}
+      >
+        <Bookmark className="h-5 w-5" fill={saved ? "currentColor" : "none"} />
+      </button>
     </Wrapper>
   );
 }
