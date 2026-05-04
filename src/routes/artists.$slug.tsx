@@ -20,8 +20,9 @@ export const Route = createFileRoute("/artists/$slug")({
 function getGroupingDate(e: EventRow): Date | null {
   const raw = e.start_datetime ?? e.event_date;
   if (!raw) return null;
-  const d = new Date(raw);
-  return isNaN(d.getTime()) ? null : d;
+  const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return null;
+  return new Date(+m[1], +m[2] - 1, +m[3]);
 }
 
 function dateKey(d: Date) {
