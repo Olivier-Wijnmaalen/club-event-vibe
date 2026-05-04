@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { Menu, X, CalendarDays, Users } from "lucide-react";
+import { Menu, X, CalendarDays, Users, Bookmark, LogIn, LogOut } from "lucide-react";
+import { useSavedEvents } from "@/lib/savedEvents";
 
 interface Props {
   children: ReactNode;
@@ -8,6 +9,7 @@ interface Props {
 
 export function AppLayout({ children }: Props) {
   const [open, setOpen] = useState(false);
+  const { session, signOut } = useSavedEvents();
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -67,6 +69,28 @@ export function AppLayout({ children }: Props) {
           <SidebarLink to="/artists" icon={<Users className="h-4 w-4" />} onClick={() => setOpen(false)}>
             Artists
           </SidebarLink>
+          <SidebarLink to="/saved" icon={<Bookmark className="h-4 w-4" />} onClick={() => setOpen(false)}>
+            Saved Events
+          </SidebarLink>
+          <div className="mt-2 border-t border-border pt-2">
+            {session ? (
+              <button
+                type="button"
+                onClick={async () => {
+                  await signOut();
+                  setOpen(false);
+                }}
+                className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium uppercase tracking-[0.15em] text-foreground transition-colors hover:bg-background hover:text-primary"
+              >
+                <LogOut className="h-4 w-4" />
+                Sign out
+              </button>
+            ) : (
+              <SidebarLink to="/auth" icon={<LogIn className="h-4 w-4" />} onClick={() => setOpen(false)}>
+                Sign in
+              </SidebarLink>
+            )}
+          </div>
         </nav>
       </aside>
 
