@@ -21,8 +21,12 @@ export const Route = createFileRoute("/")({
 function getGroupingDate(e: EventRow): Date | null {
   const raw = e.start_datetime ?? e.event_date;
   if (!raw) return null;
-  const d = new Date(raw);
-  return isNaN(d.getTime()) ? null : d;
+  // Extract Y-M-D directly from the stored string to avoid timezone shifts
+  // (e.g. "2026-04-23 23:00:00+00" should group under Apr 23, not Apr 24
+  // in browsers east of UTC).
+  const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return null;
+  return new Date(+m[1], +m[2] - 1, +m[3]);
 }
 
 function dateKey(d: Date) {
