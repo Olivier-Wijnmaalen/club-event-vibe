@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "@tanstack/react-router";
 import { supabase, type EventRow } from "@/lib/supabase";
 import { EventCard } from "@/components/EventCard";
 import { DateHeader } from "@/components/DateHeader";
@@ -36,6 +37,7 @@ function dateKey(d: Date) {
 function Index() {
   const [events, setEvents] = useState<EventRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     let cancelled = false;
@@ -83,12 +85,30 @@ function Index() {
       .map(([key, value]) => ({ key, ...value }));
   }, [events]);
 
+  // Scroll to the date section indicated by the URL hash (#date-YYYY-MM-DD)
+  useEffect(() => {
+    if (!events || groups.length === 0) return;
+    const hash =
+      typeof window !== "undefined" ? window.location.hash.replace(/^#/, "") : "";
+    if (!hash.startsWith("date-")) return;
+    const target = hash.slice("date-".length);
+    // Find the first group on or after the target date
+    const match =
+      groups.find((g) => g.key === target) ??
+      groups.find((g) => g.key >= target);
+    if (!match) return;
+    requestAnimationFrame(() => {
+      const el = document.getElementById(`date-${match.key}`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, [events, groups, router.state.location.hash]);
+
   return (
     <AppLayout>
       {events === null && <LoadingState />}
       {events !== null && groups.length === 0 && <EmptyState error={error} />}
       {groups.map((g) => (
-        <section key={g.key} className="mb-6">
+        <section key={g.key} id={`date-${g.key}`} className="mb-6 scroll-mt-24">
           <DateHeader date={g.date} />
           <div className="space-y-3 pt-3">
             {g.items.map((e) => (
