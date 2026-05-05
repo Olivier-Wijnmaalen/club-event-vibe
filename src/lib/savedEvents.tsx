@@ -1,107 +1,71 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { Session } from "@supabase/supabase-js";
-import { supabase as cloud } from "@/integrations/supabase/client";
+
+const STORAGE_KEY = "club-carousel:saved-events";
 
 interface Ctx {
-  session: Session | null;
   ready: boolean;
   savedIds: Set<string>;
   isSaved: (eventId: string | number) => boolean;
-  toggleSaved: (eventId: string | number) => Promise<void>;
-  signOut: () => Promise<void>;
+  toggleSaved: (eventId: string | number) => void;
 }
 
 const SavedEventsContext = createContext<Ctx | null>(null);
 
+function readStorage(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    if (Array.isArray(arr)) return new Set(arr.map(String));
+  } catch {
+    /* ignore */
+  }
+  return new Set();
+}
+
+function writeStorage(ids: Set<string>) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(ids)));
+  } catch {
+    /* ignore */
+  }
+}
+
 export function SavedEventsProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [ready, setReady] = useState(false);
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const { data: sub } = cloud.auth.onAuthStateChange((_e, s) => {
-      setSession(s);
-    });
-    cloud.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setReady(true);
-    });
-    return () => sub.subscription.unsubscribe();
+    setSavedIds(readStorage());
+    setReady(true);
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY) setSavedIds(readStorage());
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  useEffect(() => {
-    if (!session) {
-      setSavedIds(new Set());
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      const { data } = await cloud
-        .from("saved_events")
-        .select("event_id")
-        .eq("user_id", session.user.id);
-      if (cancelled) return;
-      setSavedIds(new Set((data ?? []).map((r: { event_id: string }) => r.event_id)));
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [session]);
-
-  const toggleSaved = useCallback(
-    async (eventId: string | number) => {
-      if (!session) {
-        window.location.assign("/auth?redirect=" + encodeURIComponent(window.location.pathname));
-        return;
-      }
-      const id = String(eventId);
-      const has = savedIds.has(id);
-      // optimistic
-      setSavedIds((prev) => {
-        const next = new Set(prev);
-        if (has) next.delete(id);
-        else next.add(id);
-        return next;
-      });
-      if (has) {
-        const { error } = await cloud
-          .from("saved_events")
-          .delete()
-          .eq("user_id", session.user.id)
-          .eq("event_id", id);
-        if (error) {
-          setSavedIds((prev) => new Set(prev).add(id));
-        }
-      } else {
-        const { error } = await cloud
-          .from("saved_events")
-          .insert({ user_id: session.user.id, event_id: id });
-        if (error) {
-          setSavedIds((prev) => {
-            const next = new Set(prev);
-            next.delete(id);
-            return next;
-          });
-        }
-      }
-    },
-    [session, savedIds],
-  );
-
-  const signOut = useCallback(async () => {
-    await cloud.auth.signOut();
+  const toggleSaved = useCallback((eventId: string | number) => {
+    const id = String(eventId);
+    setSavedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      writeStorage(next);
+      return next;
+    });
   }, []);
 
   const value = useMemo<Ctx>(
     () => ({
-      session,
       ready,
       savedIds,
       isSaved: (id) => savedIds.has(String(id)),
       toggleSaved,
-      signOut,
     }),
-    [session, ready, savedIds, toggleSaved, signOut],
+    [ready, savedIds, toggleSaved],
   );
 
   return <SavedEventsContext.Provider value={value}>{children}</SavedEventsContext.Provider>;
