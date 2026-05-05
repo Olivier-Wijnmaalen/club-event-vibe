@@ -1,6 +1,8 @@
 import { useState, type ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Menu, X, CalendarDays, Users, Bookmark } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
 interface Props {
   children: ReactNode;
@@ -8,6 +10,15 @@ interface Props {
 
 export function AppLayout({ children }: Props) {
   const [open, setOpen] = useState(false);
+  const [pickedDate, setPickedDate] = useState<Date | undefined>(undefined);
+  const navigate = useNavigate();
+
+  const goToDate = () => {
+    if (!pickedDate) return;
+    const key = `${pickedDate.getFullYear()}-${String(pickedDate.getMonth() + 1).padStart(2, "0")}-${String(pickedDate.getDate()).padStart(2, "0")}`;
+    setOpen(false);
+    navigate({ to: "/", hash: `date-${key}` });
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -42,7 +53,7 @@ export function AppLayout({ children }: Props) {
         />
       )}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[80vw] transform border-r border-border bg-card transition-transform duration-300 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 max-w-[80vw] transform flex-col overflow-y-auto border-r border-border bg-card transition-transform duration-300 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
         aria-hidden={!open}
@@ -71,6 +82,29 @@ export function AppLayout({ children }: Props) {
             Saved Events
           </SidebarLink>
         </nav>
+
+        <div className="border-t border-border px-3 pb-4 pt-4">
+          <div className="px-1 pb-2 text-xs font-bold uppercase tracking-[0.2em] text-primary">
+            Filter by date
+          </div>
+          <Calendar
+            mode="single"
+            selected={pickedDate}
+            onSelect={setPickedDate}
+            className={cn("p-2 pointer-events-auto")}
+          />
+          <button
+            type="button"
+            onClick={goToDate}
+            disabled={!pickedDate}
+            className="mt-2 w-full rounded-md bg-primary px-3 py-2 text-xs font-bold uppercase tracking-[0.2em] text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
+          >
+            Go
+          </button>
+          <p className="mt-2 px-1 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            Scroll up or down to browse other dates
+          </p>
+        </div>
       </aside>
 
       <main className="mx-auto max-w-2xl px-4 pb-24 pt-2">{children}</main>
