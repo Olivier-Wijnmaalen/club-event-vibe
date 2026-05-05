@@ -61,7 +61,7 @@ export function EventCard({ event }: Props) {
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          void toggleSaved(event.id);
+          toggleSaved(event.id);
         }}
         aria-label={saved ? "Unsave event" : "Save event"}
         aria-pressed={saved}
