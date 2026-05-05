@@ -92,6 +92,10 @@ export function AppLayout({ children }: Props) {
             selected={pickedDate}
             onSelect={setPickedDate}
             className={cn("p-2 pointer-events-auto")}
+            classNames={{
+              today:
+                "rounded-md border border-red-500 bg-transparent text-foreground data-[selected=true]:rounded-none",
+            }}
           />
           <button
             type="button"
