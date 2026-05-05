@@ -67,7 +67,7 @@ export function AppLayout({ children }: Props) {
               Club Carousel
             </span>
             <span className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-              Tonight & beyond
+              Stay in rotation
             </span>
           </Link>
         </div>
