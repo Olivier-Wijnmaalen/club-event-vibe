@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase, type EventRow } from "@/lib/supabase";
 import { AppLayout } from "@/components/AppLayout";
@@ -29,13 +29,14 @@ function dateKey(d: Date) {
 }
 
 function SavedPage() {
-  const { session, ready, savedIds } = useSavedEvents();
+  const { ready, savedIds } = useSavedEvents();
   const [events, setEvents] = useState<EventRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!ready || !session || savedIds.size === 0) {
-      if (ready) setEvents([]);
+    if (!ready) return;
+    if (savedIds.size === 0) {
+      setEvents([]);
       return;
     }
     let cancelled = false;
@@ -56,7 +57,7 @@ function SavedPage() {
     return () => {
       cancelled = true;
     };
-  }, [ready, session, savedIds]);
+  }, [ready, savedIds]);
 
   const groups = useMemo(() => {
     if (!events) return [];
@@ -84,45 +85,30 @@ function SavedPage() {
         </p>
       </div>
 
-      {ready && !session && (
-        <div className="mt-16 text-center">
-          <p className="text-sm text-muted-foreground">Sign in to view your saved events.</p>
-          <Link
-            to="/auth"
-            search={{ redirect: "/saved" }}
-            className="mt-4 inline-block rounded-md bg-primary px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-primary-foreground"
-          >
-            Sign in
-          </Link>
-        </div>
-      )}
-
-      {session && events === null && (
+      {!ready || events === null ? (
         <div className="space-y-3 pt-6">
           {[0, 1, 2].map((i) => (
             <div key={i} className="h-28 animate-pulse rounded-lg border border-border bg-card/60" />
           ))}
         </div>
-      )}
-
-      {session && events !== null && groups.length === 0 && (
+      ) : groups.length === 0 ? (
         <div className="mt-16 text-center">
           <p className="text-sm text-muted-foreground">
             {error ?? "You haven't saved any events yet. Tap the bookmark on an event to save it."}
           </p>
         </div>
+      ) : (
+        groups.map((g) => (
+          <section key={g.key} className="mb-6">
+            <DateHeader date={g.date} />
+            <div className="space-y-3 pt-3">
+              {g.items.map((e) => (
+                <EventCard key={String(e.id)} event={e} />
+              ))}
+            </div>
+          </section>
+        ))
       )}
-
-      {groups.map((g) => (
-        <section key={g.key} className="mb-6">
-          <DateHeader date={g.date} />
-          <div className="space-y-3 pt-3">
-            {g.items.map((e) => (
-              <EventCard key={String(e.id)} event={e} />
-            ))}
-          </div>
-        </section>
-      ))}
     </AppLayout>
   );
 }
