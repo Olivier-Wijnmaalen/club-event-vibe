@@ -1,7 +1,8 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Menu, X, CalendarDays, Users, Bookmark } from "lucide-react";
+import { Menu, X, CalendarDays, Users, Bookmark, Building2, ChevronDown } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
+import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -11,7 +12,36 @@ interface Props {
 export function AppLayout({ children }: Props) {
   const [open, setOpen] = useState(false);
   const [pickedDate, setPickedDate] = useState<Date | undefined>(undefined);
+  const [clubsOpen, setClubsOpen] = useState(false);
+  const [clubs, setClubs] = useState<string[]>([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("events")
+        .select("club_name")
+        .not("club_name", "is", null);
+      if (cancelled || !data) return;
+      const unique = Array.from(
+        new Set(
+          data
+            .map((r: { club_name: string | null }) => r.club_name?.trim() ?? "")
+            .filter(Boolean),
+        ),
+      ).sort((a, b) => a.localeCompare(b));
+      setClubs(unique);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const goToClub = (club: string) => {
+    setOpen(false);
+    navigate({ to: "/", search: { club } as never });
+  };
 
   const goToDate = () => {
     if (!pickedDate) return;
@@ -81,6 +111,52 @@ export function AppLayout({ children }: Props) {
           <SidebarLink to="/saved" icon={<Bookmark className="h-4 w-4" />} onClick={() => setOpen(false)}>
             Saved Events
           </SidebarLink>
+          <button
+            type="button"
+            onClick={() => setClubsOpen((v) => !v)}
+            aria-expanded={clubsOpen}
+            className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium uppercase tracking-[0.15em] text-foreground transition-colors hover:bg-background hover:text-primary"
+          >
+            <Building2 className="h-4 w-4" />
+            <span className="flex-1 text-left">Filter by club</span>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 transition-transform",
+                clubsOpen && "rotate-180",
+              )}
+            />
+          </button>
+          {clubsOpen && (
+            <div className="mt-1 max-h-60 overflow-y-auto rounded-md border border-border bg-background/40 py-1">
+              {clubs.length === 0 && (
+                <div className="px-3 py-2 text-xs text-muted-foreground">
+                  Loading clubs…
+                </div>
+              )}
+              {clubs.map((club) => (
+                <button
+                  key={club}
+                  type="button"
+                  onClick={() => goToClub(club)}
+                  className="block w-full truncate px-4 py-1.5 text-left text-xs uppercase tracking-[0.12em] text-foreground transition-colors hover:bg-card hover:text-primary"
+                >
+                  {club}
+                </button>
+              ))}
+              {clubs.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    navigate({ to: "/", search: {} as never });
+                  }}
+                  className="block w-full px-4 py-1.5 text-left text-[10px] uppercase tracking-[0.18em] text-muted-foreground hover:text-primary"
+                >
+                  Clear filter
+                </button>
+              )}
+            </div>
+          )}
         </nav>
 
         <div className="border-t border-border px-3 pb-4 pt-4">

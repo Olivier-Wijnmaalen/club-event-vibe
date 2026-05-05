@@ -8,6 +8,9 @@ import { AppLayout } from "@/components/AppLayout";
 
 export const Route = createFileRoute("/")({
   component: Index,
+  validateSearch: (search: Record<string, unknown>) => ({
+    club: typeof search.club === "string" ? search.club : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Club Carousel — Club agenda" },
@@ -38,6 +41,7 @@ function Index() {
   const [events, setEvents] = useState<EventRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { club } = Route.useSearch();
 
   useEffect(() => {
     let cancelled = false;
@@ -71,8 +75,15 @@ function Index() {
 
   const groups = useMemo(() => {
     if (!events) return [];
+    const filtered = club
+      ? events.filter(
+          (e) =>
+            (e.club_name ?? "").trim().toLowerCase() ===
+            club.trim().toLowerCase(),
+        )
+      : events;
     const map = new Map<string, { date: Date; items: EventRow[] }>();
-    for (const e of events) {
+    for (const e of filtered) {
       const d = getGroupingDate(e);
       if (!d) continue;
       const key = dateKey(d);
@@ -83,7 +94,7 @@ function Index() {
     return Array.from(map.entries())
       .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
       .map(([key, value]) => ({ key, ...value }));
-  }, [events]);
+  }, [events, club]);
 
   // Scroll to the date section indicated by the URL hash (#date-YYYY-MM-DD)
   useEffect(() => {
@@ -105,6 +116,20 @@ function Index() {
 
   return (
     <AppLayout>
+      {club && (
+        <div className="mb-3 flex items-center justify-between rounded-md border border-border bg-card px-3 py-2 text-xs uppercase tracking-[0.15em]">
+          <span className="text-muted-foreground">
+            Filter: <span className="text-primary">{club}</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => router.navigate({ to: "/", search: {} as never })}
+            className="text-muted-foreground hover:text-primary"
+          >
+            Clear
+          </button>
+        </div>
+      )}
       {events === null && <LoadingState />}
       {events !== null && groups.length === 0 && <EmptyState error={error} />}
       {groups.map((g) => (
