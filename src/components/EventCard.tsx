@@ -34,7 +34,7 @@ export function EventCard({ event }: Props) {
   return (
     <Wrapper
       {...wrapperProps}
-      className="group relative block rounded-lg border border-border bg-card p-5 pb-12 transition-all duration-200 hover:border-primary/60 hover:bg-card/80 active:scale-[0.99]"
+      className="group relative block rounded-lg border border-border/60 bg-card/70 p-5 pb-12 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.8)] backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/60 hover:bg-card/80 hover:shadow-[0_20px_40px_-12px_rgba(220,38,38,0.45)] active:scale-[0.99]"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
