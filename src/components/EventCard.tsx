@@ -1,6 +1,24 @@
 import type { EventRow } from "@/lib/supabase";
 import { Bookmark } from "lucide-react";
 import { useSavedEvents } from "@/lib/savedEvents";
+import radioRadioLogo from "@/assets/clubs/radioradio.png";
+import skatecafeLogo from "@/assets/clubs/skatecafe.png";
+import tillatecLogo from "@/assets/clubs/tillatec.png";
+import garageNoordLogo from "@/assets/clubs/garagenoord.jpeg";
+import nachbarLogo from "@/assets/clubs/nachbar.jpeg";
+
+const CLUB_LOGOS: Record<string, string> = {
+  "radio radio": radioRadioLogo,
+  skatecafe: skatecafeLogo,
+  tillatec: tillatecLogo,
+  "garage noord": garageNoordLogo,
+  nachbar: nachbarLogo,
+};
+
+function clubLogo(name: string | null): string | null {
+  if (!name) return null;
+  return CLUB_LOGOS[name.trim().toLowerCase()] ?? null;
+}
 
 interface Props {
   event: EventRow;
@@ -38,8 +56,16 @@ export function EventCard({ event }: Props) {
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <div className="text-xs font-medium uppercase tracking-[0.18em] text-primary/90">
-            {event.club_name ?? "Unknown club"}
+          <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.18em] text-primary/90">
+            {clubLogo(event.club_name) && (
+              <img
+                src={clubLogo(event.club_name)!}
+                alt=""
+                aria-hidden="true"
+                className="h-3 w-3 shrink-0 rounded-sm object-cover"
+              />
+            )}
+            <span>{event.club_name ?? "Unknown club"}</span>
           </div>
           <h3 className="mt-1.5 text-xl font-bold leading-tight text-foreground sm:text-2xl">
             {event.party_name ?? "Untitled event"}
