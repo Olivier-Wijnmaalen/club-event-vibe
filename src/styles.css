@@ -140,9 +140,9 @@
   body {
     background-color: var(--color-background);
     background-image:
-      radial-gradient(ellipse at top, oklch(0.28 0.13 27 / 0.55), transparent 60%),
-      radial-gradient(ellipse at bottom, oklch(0.22 0.12 27 / 0.45), transparent 65%),
-      linear-gradient(180deg, oklch(0 0 0) 0%, oklch(0.08 0.05 27) 50%, oklch(0 0 0) 100%);
+      radial-gradient(ellipse at top, oklch(0.42 0.22 27 / 0.85), transparent 65%),
+      radial-gradient(ellipse at bottom, oklch(0.38 0.20 27 / 0.75), transparent 70%),
+      linear-gradient(180deg, oklch(0.05 0.04 27) 0%, oklch(0.18 0.12 27) 50%, oklch(0.03 0.02 27) 100%);
     background-attachment: fixed;
     background-repeat: no-repeat;
     color: var(--color-foreground);
